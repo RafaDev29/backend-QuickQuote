@@ -68,13 +68,23 @@ CREATE TABLE tb_detalle_cotizacion (
     FOREIGN KEY (ID_Producto) REFERENCES tb_producto(ID_Producto)
 );
 
--- Trigger para actualizar el total de la cotización cuando se inserta un detalle
-DELIMITER $$
-CREATE TRIGGER actualizar_total_cotizacion AFTER INSERT ON tb_detalle_cotizacion
+     DELIMITER $$
+
+CREATE TRIGGER actualizar_total_cotizacion 
+AFTER INSERT ON tb_detalle_cotizacion
 FOR EACH ROW
 BEGIN
     DECLARE total_actual DECIMAL(10,2);
-    SELECT SUM(Subtotal) INTO total_actual FROM tb_detalle_cotizacion WHERE ID_Cotizacion = NEW.ID_Cotizacion;
-    UPDATE Cotizacion SET Total = total_actual WHERE ID_Cotizacion = NEW.ID_Cotizacion;
+
+    -- Selecciona la suma de los subtotales de los productos en la cotización
+    SELECT SUM(Subtotal) INTO total_actual 
+    FROM tb_detalle_cotizacion 
+    WHERE ID_Cotizacion = NEW.ID_Cotizacion;
+
+    -- Actualiza el total en la tabla tb_cotizacion
+    UPDATE tb_cotizacion 
+    SET Total = total_actual 
+    WHERE ID_Cotizacion = NEW.ID_Cotizacion;
 END$$
+
 DELIMITER ;

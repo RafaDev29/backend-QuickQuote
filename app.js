@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const authRoutes = require('./src/modules/auth/auth.routes');
 const vendedorRoutes = require('./src/modules/vendedor/vendedor.routes'); 
 const productoRoutes = require('./src/modules/producto/producto.routes');
-
+const clienteRoutes = require('./src/modules/cliente/cliente.routes');
 dotenv.config(); // Cargamos las variables de entorno
 
 const app = express();
@@ -17,6 +17,7 @@ app.use('/api/auth', authRoutes);
 
 app.use('/api/producto', productoRoutes);
 app.use('/api/vendedor', vendedorRoutes);
+app.use('/api/cliente', clienteRoutes);
 
 const PORT = process.env.PORT || 3000;
 

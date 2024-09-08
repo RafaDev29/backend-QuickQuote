@@ -1,4 +1,4 @@
-const { createCotizacion, deleteCotizacion, getAllCotizaciones, getCotizacionById } = require('./cotizacion.service');
+const { createCotizacion, deleteCotizacion, getAllCotizaciones, getCotizacionById, aprobarCotizacion } = require('./cotizacion.service');
 
 // Controlador para crear una cotización
 const createCotizacionController = async (req, res) => {
@@ -37,9 +37,17 @@ const getCotizacionByIdController = async (req, res) => {
   return res.json(response);
 };
 
+const aprobarCotizacionController = async (req, res) => {
+    const idCotizacion = req.params.id; // ID de la cotización que se quiere aprobar
+  
+    const response = await aprobarCotizacion(idCotizacion);
+    return res.json(response);
+  };
+
 module.exports = {
   createCotizacionController,
   deleteCotizacionController,
   getAllCotizacionesController,
-  getCotizacionByIdController
+  getCotizacionByIdController,
+  aprobarCotizacionController
 };

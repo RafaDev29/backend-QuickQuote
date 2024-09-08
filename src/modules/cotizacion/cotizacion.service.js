@@ -60,8 +60,120 @@ const createCotizacion = async (cotizacionData, vendedorId) => {
 // Función para eliminar una cotización por ID
 const deleteCotizacion = async (idCotizacion) => {
     try {
-      const [result] = await pool.query('DELETE FROM tb_cotizacion WHERE ID_Cotizacion = ?', [idCotizacion]);
+
   
+      const [detalleResult] = await pool.query('DELETE FROM tb_detalle_cotizacion WHERE ID_Cotizacion = ?', [idCotizacion]);
+      
+
+  
+      const [cotizacionResult] = await pool.query('DELETE FROM tb_cotizacion WHERE ID_Cotizacion = ?', [idCotizacion]);
+      
+
+      if (cotizacionResult.affectedRows === 0) {
+        return {
+          status: false,
+          message: 'Cotización no encontrada',
+          data: null
+        };
+      }
+  
+      return {
+        status: true,
+        message: 'Cotización y detalles eliminados correctamente',
+        data: null
+      };
+    } catch (error) {
+      // Log del error para capturar el mensaje
+      console.error('Error al eliminar la cotización:', error.message);
+  
+      return {
+        status: false,
+        message: 'Error en el servidor al eliminar la cotización',
+        data: error.message // Añadimos el mensaje del error para mayor detalle
+      };
+    }
+  };
+  
+
+// Función para listar todas las cotizaciones junto con los datos del cliente
+const getAllCotizaciones = async () => {
+  try {
+    // Consulta SQL que combina tb_cotizacion y tb_cliente usando JOIN
+    const [cotizaciones] = await pool.query(`
+      SELECT 
+        c.ID_Cotizacion,
+        c.ID_Cliente,
+        cl.Nombre AS Cliente_Nombre,
+        cl.Correo_Electronico AS Cliente_Correo,
+        cl.Telefono AS Cliente_Telefono,
+        c.Direccion,
+        c.Moneda,
+        c.Condicion_Pago,
+        c.Fecha_Emision,
+        c.Fecha_Vencimiento,
+        c.ID_Vendedor,
+        c.ID_Administrador,
+        c.Estado,
+        c.Total
+      FROM tb_cotizacion c
+      JOIN tb_cliente cl ON c.ID_Cliente = cl.ID_Cliente
+    `);
+
+    return {
+      status: true,
+      message: 'Lista de cotizaciones obtenida correctamente',
+      data: cotizaciones
+    };
+  } catch (error) {
+    console.error('Error al obtener las cotizaciones:', error.message);
+    return {
+      status: false,
+      message: 'Error al obtener las cotizaciones',
+      data: error.message
+    };
+  }
+};
+
+
+    // cotizacion.service.js
+const getCotizacionById = async (idCotizacion) => {
+    try {
+      const [cotizacion] = await pool.query('SELECT * FROM tb_cotizacion WHERE ID_Cotizacion = ?', [idCotizacion]);
+  
+      if (cotizacion.length === 0) {
+        return {
+          status: false,
+          message: 'Cotización no encontrada',
+          data: null
+        };
+      }
+  
+      const [productos] = await pool.query('SELECT * FROM tb_detalle_cotizacion WHERE ID_Cotizacion = ?', [idCotizacion]);
+  
+      return {
+        status: true,
+        message: 'Cotización obtenida correctamente',
+        data: {
+          cotizacion: cotizacion[0],
+          productos
+        }
+      };
+    } catch (error) {
+      return {
+        status: false,
+        message: 'Error al obtener la cotización',
+        data: null
+      };
+    }
+  };
+
+  // Función para aprobar una cotización
+const aprobarCotizacion = async (idCotizacion) => {
+    try {
+      // Actualizamos el estado de la cotización a 'aprobada'
+      const [result] = await pool.query('UPDATE tb_cotizacion SET Estado = ? WHERE ID_Cotizacion = ?', ['aprobada', idCotizacion]);
+  
+      // Si no se afectaron filas, significa que no se encontró la cotización
       if (result.affectedRows === 0) {
         return {
           status: false,
@@ -72,37 +184,19 @@ const deleteCotizacion = async (idCotizacion) => {
   
       return {
         status: true,
-        message: 'Cotización eliminada correctamente',
+        message: 'Cotización aprobada correctamente',
         data: null
       };
     } catch (error) {
+      console.error('Error al aprobar la cotización:', error.message);
       return {
         status: false,
-        message: 'Error en el servidor al eliminar la cotización',
-        data: null
-      };
-    }
-  };
-
-  
-  // Función para listar todas las cotizaciones
-const getAllCotizaciones = async () => {
-    try {
-      const [cotizaciones] = await pool.query('SELECT * FROM tb_cotizacion');
-      return {
-        status: true,
-        message: 'Lista de cotizaciones obtenida correctamente',
-        data: cotizaciones
-      };
-    } catch (error) {
-      return {
-        status: false,
-        message: 'Error al obtener las cotizaciones',
-        data: null
+        message: 'Error en el servidor al aprobar la cotización',
+        data: error.message
       };
     }
   };
   
-
-    
-module.exports = { createCotizacion, deleteCotizacion,getAllCotizaciones  };
+  // Asegúrate de exportar la función
+  module.exports = { getCotizacionById, createCotizacion, deleteCotizacion, getAllCotizaciones, aprobarCotizacion };
+  

@@ -1,0 +1,80 @@
+
+CREATE TABLE tb_usuario (
+    ID_Usuario INT AUTO_INCREMENT PRIMARY KEY,
+    User VARCHAR(100) UNIQUE NOT NULL,
+    Contraseña VARCHAR(100) NOT NULL,
+    Rol ENUM('vendedor', 'administrador') NOT NULL
+);
+
+CREATE TABLE tb_vendedor (
+    ID_Vendedor INT PRIMARY KEY,
+    Nombre VARCHAR(100) NOT NULL,
+    Correo_Electronico VARCHAR(100) UNIQUE NOT NULL,
+    Numero_Telefono VARCHAR(15),
+    FOREIGN KEY (ID_Vendedor) REFERENCES tb_usuario(ID_Usuario) ON DELETE CASCADE
+);
+
+
+CREATE TABLE tb_administrador (
+    ID_Administrador INT PRIMARY KEY,
+    Nombre VARCHAR(100) NOT NULL,
+    Correo_Electronico VARCHAR(100) UNIQUE NOT NULL,
+    Numero_Telefono VARCHAR(15),
+    FOREIGN KEY (ID_Administrador) REFERENCES tb_usuario(ID_Usuario) ON DELETE CASCADE
+);
+
+-- Tabla Cliente
+CREATE TABLE tb_cliente (
+    ID_Cliente INT AUTO_INCREMENT PRIMARY KEY,
+    Nombre VARCHAR(100) NOT NULL,
+    Correo_Electronico VARCHAR(100),
+    Telefono VARCHAR(15)
+);
+
+-- Tabla Producto
+CREATE TABLE tb_producto (
+    ID_Producto INT AUTO_INCREMENT PRIMARY KEY,
+    Nombre VARCHAR(100) NOT NULL,
+    Descripcion TEXT,
+    Precio_Unitario DECIMAL(10, 2) NOT NULL
+);
+
+-- Tabla Cotización
+CREATE TABLE tb_cotizacion (
+    ID_Cotizacion INT AUTO_INCREMENT PRIMARY KEY,
+    ID_Cliente INT NOT NULL,
+    Direccion VARCHAR(255) NOT NULL,
+    Moneda ENUM('USD', 'EUR', 'PEN', 'MXN', 'COP') NOT NULL,
+    Condicion_Pago VARCHAR(100) NOT NULL,
+    Fecha_Emision DATE NOT NULL,
+    Fecha_Vencimiento DATE NOT NULL,
+    ID_Vendedor INT NOT NULL,
+    ID_Administrador INT DEFAULT NULL,
+    Estado ENUM('creada', 'aprobada', 'editada', 'eliminada') DEFAULT 'creada',
+    Total DECIMAL(10, 2) DEFAULT 0.00,
+    FOREIGN KEY (ID_Cliente) REFERENCES tb_cliente(ID_Cliente),
+    FOREIGN KEY (ID_Vendedor) REFERENCES tb_vendedor(ID_Vendedor),
+    FOREIGN KEY (ID_Administrador) REFERENCES tb_administrador(ID_Administrador)
+);
+
+-- Tabla Detalle de Cotización (relación N a N entre Cotización y Producto)
+CREATE TABLE tb_detalle_cotizacion (
+    ID_Detalle INT AUTO_INCREMENT PRIMARY KEY,
+    ID_Cotizacion INT NOT NULL,
+    ID_Producto INT NOT NULL,
+    Cantidad INT NOT NULL,
+    Subtotal DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (ID_Cotizacion) REFERENCES tb_cotizacion(ID_Cotizacion),
+    FOREIGN KEY (ID_Producto) REFERENCES tb_producto(ID_Producto)
+);
+
+-- Trigger para actualizar el total de la cotización cuando se inserta un detalle
+DELIMITER $$
+CREATE TRIGGER actualizar_total_cotizacion AFTER INSERT ON tb_detalle_cotizacion
+FOR EACH ROW
+BEGIN
+    DECLARE total_actual DECIMAL(10,2);
+    SELECT SUM(Subtotal) INTO total_actual FROM tb_detalle_cotizacion WHERE ID_Cotizacion = NEW.ID_Cotizacion;
+    UPDATE Cotizacion SET Total = total_actual WHERE ID_Cotizacion = NEW.ID_Cotizacion;
+END$$
+DELIMITER ;
